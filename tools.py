@@ -33,6 +33,16 @@ REQUEST_TIMEOUT_SECONDS = 30
 # Guard against an enormous catalog flooding the context window.
 MAX_LIST_BODY_CHARS = 60_000
 
+
+def _tls_verify() -> bool:
+    """TLS certificate verification toggle (dev-only convenience).
+
+    The local integration backend (LocalSIT, https://127.0.0.1:44340) uses a
+    self-signed certificate, so verification is disabled by default. Set
+    ``CHATHUB_GATEWAY_TLS_VERIFY=1`` to re-enable verification (production).
+    """
+    return os.environ.get("CHATHUB_GATEWAY_TLS_VERIFY", "0") == "1"
+
 LIST_CHATHUB_TOOLS_SCHEMA = {
     "name": "list_chathub_tools",
     "description": (
@@ -153,7 +163,9 @@ def _http_get_json(url: str, headers: dict) -> tuple[int, Optional[Any], str]:
     """GET + JSON parse. Returns (status, parsed, raw_text)."""
     import requests
 
-    resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
+    resp = requests.get(
+        url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS, verify=_tls_verify()
+    )
     return resp.status_code, _safe_json(resp), resp.text
 
 
@@ -161,7 +173,9 @@ def _http_post_json(url: str, headers: dict, body: dict) -> tuple[int, Optional[
     """POST JSON + parse. Returns (status, parsed, raw_text)."""
     import requests
 
-    resp = requests.post(url, headers=headers, json=body, timeout=REQUEST_TIMEOUT_SECONDS)
+    resp = requests.post(
+        url, headers=headers, json=body, timeout=REQUEST_TIMEOUT_SECONDS, verify=_tls_verify()
+    )
     return resp.status_code, _safe_json(resp), resp.text
 
 
