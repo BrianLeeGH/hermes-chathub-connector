@@ -91,7 +91,7 @@ class MockGateway(BaseHTTPRequestHandler):
             "path": self.path,
             "x_turn_secret": self.headers.get("X-Turn-Secret"),
         }
-        if self.path == "/api/connectors/tools":
+        if self.path == "/be-api/connectors/tools":
             if type(self).mode == "unauthorized":
                 self._respond(
                     401,
@@ -124,7 +124,7 @@ class MockGateway(BaseHTTPRequestHandler):
             "x_turn_secret": self.headers.get("X-Turn-Secret"),
             "body": body,
         }
-        if self.path == "/api/connectors/tools:call":
+        if self.path == "/be-api/connectors/tools:call":
             if type(self).mode == "unauthorized":
                 self._respond(
                     401,
@@ -186,8 +186,8 @@ def main() -> int:
             f"entries={names}",
         )
         report(
-            seen.get("path") == "/api/connectors/tools",
-            "list hits GET /api/connectors/tools",
+            seen.get("path") == "/be-api/connectors/tools",
+            "list hits GET /be-api/connectors/tools",
         )
 
         # --- 2. exec via mock (200): body shape + header
@@ -199,8 +199,8 @@ def main() -> int:
         header_ok = seen.get("x_turn_secret") == secret
         report(header_ok, "exec attaches X-Turn-Secret", f"seen={seen.get('x_turn_secret')!r}")
         report(
-            seen.get("path") == "/api/connectors/tools:call",
-            "exec hits POST /api/connectors/tools:call",
+            seen.get("path") == "/be-api/connectors/tools:call",
+            "exec hits POST /be-api/connectors/tools:call",
         )
         body = seen.get("body", {})
         report(

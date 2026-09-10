@@ -15,6 +15,16 @@ Both tools belong to the `chathub` toolset:
 
 The entry-point name is `chathub-connector`, matching existing Hermes profiles.
 
+## Gateway endpoints
+
+Both calls go to the ChatHub gateway under the `be-api/` prefix — the only
+`/api` family the ChatHub ingress routes to the API host:
+
+- `GET  {gateway}/be-api/connectors/tools`
+- `POST {gateway}/be-api/connectors/tools:call`
+
+Every request carries `X-Turn-Secret` (re-read per call).
+
 ## Installation
 
 Preferred installation is the pip package in the Hermes environment:
@@ -61,6 +71,11 @@ shared dependency.
 ```bash
 python3 -m venv /tmp/plugvenv
 /tmp/plugvenv/bin/pip install --no-deps .
+/tmp/plugvenv/bin/pip install pytest   # optional; tests also run under unittest
+/tmp/plugvenv/bin/python -m pytest tests/
 /tmp/plugvenv/bin/python tests/test_register.py
 python3 scripts/smoke_chathub_tools.py --help
 ```
+
+`tests/test_endpoint_paths.py` pins both handlers to the `be-api/` endpoints
+(the ingress routes only that prefix to the API host).

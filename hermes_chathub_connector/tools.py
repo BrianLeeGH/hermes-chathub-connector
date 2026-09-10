@@ -6,8 +6,8 @@ Imports only Hermes top-level modules (``agent.secret_scope``,
 
 Two static meta-tools:
 
-* ``list_chathub_tools()``  -> GET {gateway}/api/connectors/tools
-* ``exec_chathub_tools(name, args)`` -> POST {gateway}/api/connectors/tools:call
+* ``list_chathub_tools()``  -> GET {gateway}/be-api/connectors/tools
+* ``exec_chathub_tools(name, args)`` -> POST {gateway}/be-api/connectors/tools:call
 
 Both attach ``X-Turn-Secret`` (value from ``get_secret("CHATHUB_TURN_SECRET")``,
 re-read on every call for turn-level freshness). Non-2xx responses (notably
@@ -193,7 +193,7 @@ def _safe_json(resp: Any) -> Optional[Any]:
 # ---------------------------------------------------------------------------
 
 def _handle_list_chathub_tools(args: dict, **kw) -> str:
-    """GET {gateway}/api/connectors/tools -> catalog string (or error result)."""
+    """GET {gateway}/be-api/connectors/tools -> catalog string (or error result)."""
     secret = _turn_secret()
     if not secret:
         return tool_error(
@@ -204,7 +204,7 @@ def _handle_list_chathub_tools(args: dict, **kw) -> str:
         )
 
     base = _resolve_gateway_base_url()
-    url = f"{base}/api/connectors/tools"
+    url = f"{base}/be-api/connectors/tools"
     try:
         status, parsed, raw = _http_get_json(url, _auth_headers(secret))
     except Exception as exc:  # network-level failure — keep the model informed
@@ -232,7 +232,7 @@ def _handle_list_chathub_tools(args: dict, **kw) -> str:
 
 
 def _handle_exec_chathub_tools(args: dict, **kw) -> str:
-    """POST {gateway}/api/connectors/tools:call {name, args} -> result string."""
+    """POST {gateway}/be-api/connectors/tools:call {name, args} -> result string."""
     secret = _turn_secret()
     if not secret:
         return tool_error(
@@ -248,7 +248,7 @@ def _handle_exec_chathub_tools(args: dict, **kw) -> str:
     tool_args = _normalize_args(args.get("args"))
 
     base = _resolve_gateway_base_url()
-    url = f"{base}/api/connectors/tools:call"
+    url = f"{base}/be-api/connectors/tools:call"
     body = {"name": name, "args": tool_args}
     try:
         status, parsed, raw = _http_post_json(url, _auth_headers(secret), body)
