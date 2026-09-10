@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hermes-chathub-connector"
+version = "0.1.0"
+description = "ChatHub connector-platform bridge plugin for Hermes Agent (list_chathub_tools / exec_chathub_tools)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Brian Li" }]
+
+[project.entry-points."hermes_agent.plugins"]
+chathub-connector = "hermes_chathub_connector"
+
+[tool.setuptools.packages.find]
+include = ["hermes_chathub_connector*"]
