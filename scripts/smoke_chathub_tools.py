@@ -47,9 +47,6 @@ def report(ok: bool, label: str, detail: str = "") -> None:
 
 def load_plugin_module(plugin_dir: str, install_dir: str):
     """Mirror hermes_cli.plugins._load_directory_module to import the plugin."""
-    # The directory loader supplies the plugin package path, while the thin
-    # compatibility shell imports the installable child package by name.
-    sys.path.insert(0, plugin_dir)
     sys.path.insert(0, install_dir)
     ns_name = "hermes_plugins"
     if ns_name not in sys.modules:
