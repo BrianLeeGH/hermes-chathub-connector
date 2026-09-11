@@ -50,7 +50,11 @@ LIST_CHATHUB_TOOLS_SCHEMA = {
         "platform. Each entry's name is already fully prefixed with its "
         "connector key (e.g. ms365/get_current_user). Call this tool FIRST to "
         "discover the exact tool names and their input schemas, then invoke "
-        "exec_chathub_tools with the complete name."
+        "exec_chathub_tools with the complete name. Also call it when none of "
+        "your current tools or skills cover the external system the user is "
+        "asking about (mail, calendar, IM, knowledge bases, ...): this catalog "
+        "lists connector-platform tools only, not Hermes built-in tools or "
+        "skills, so it cannot fill a gap in those."
     ),
     "parameters": {"type": "object", "properties": {}},
 }
