@@ -10,7 +10,7 @@ MCP servers or hold user OAuth tokens.
 
 Both tools belong to the `chathub` toolset:
 
-- `list_chathub_tools`: list the available, fully prefixed connector tool names.
+- `list_chathub_tools`: list the available, fully prefixed connector tool names; accepts an optional `query` (space-separated keywords, grep-style OR matching against names/descriptions, case-insensitive).
 - `exec_chathub_tools`: invoke one tool by its prefixed name and JSON arguments.
 
 The entry-point name is `chathub-connector`, matching existing Hermes profiles.

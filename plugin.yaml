@@ -1,6 +1,6 @@
 manifest_version: 1
 name: chathub-connector
-version: 0.2.0
+version: 0.2.2
 description: >-
   ChatHub connector-platform bridge — two static meta-tools
   (list_chathub_tools / exec_chathub_tools) that proxy tool discovery and

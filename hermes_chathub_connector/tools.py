@@ -16,6 +16,7 @@ re-read on every call for turn-level freshness). Non-2xx responses (notably
 
 from __future__ import annotations
 
+import difflib
 import json
 import os
 from typing import Any, Optional
@@ -56,7 +57,20 @@ LIST_CHATHUB_TOOLS_SCHEMA = {
         "lists connector-platform tools only, not Hermes built-in tools or "
         "skills, so it cannot fill a gap in those."
     ),
-    "parameters": {"type": "object", "properties": {}},
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": (
+                    "Optional grep-style filter: space-separated keywords; a "
+                    "tool is returned if ANY keyword appears in its name or "
+                    "description (case-insensitive substring, OR semantics), "
+                    'e.g. "mail calendar" or "日程". Omit to list all tools.'
+                ),
+            },
+        },
+    },
 }
 
 EXEC_CHATHUB_TOOLS_SCHEMA = {
@@ -163,6 +177,65 @@ def _catalog_payload(data: Any) -> Any:
     return data
 
 
+def _normalize_query_keywords(query: Any) -> list:
+    """Normalize the optional ``query`` argument into lowercase keywords.
+
+    Accepts a space-separated string (e.g. "mail calendar") or a list of
+    strings (some models send arrays); anything else yields no keywords.
+    """
+    if isinstance(query, str):
+        parts = [query]
+    elif isinstance(query, (list, tuple)):
+        parts = [str(item) for item in query if isinstance(item, str)]
+    else:
+        return []
+    return [word.lower() for part in parts for word in part.split() if word]
+
+
+def _filter_tools_by_query(
+    payload: Any, query: Any
+) -> tuple[Any, Optional[list]]:
+    """Grep-style OR filter over the tool catalog.
+
+    Returns ``(payload, None)`` when nothing was filtered (no keywords or a
+    non-list payload). Returns ``(matched, None)`` when keywords matched.
+    Returns ``([], suggestions)`` when keywords matched nothing: suggestions
+    are the closest real tool names (matched on the bare part after the
+    ``{Key}/`` prefix, so a typo like "sendmail" still suggests
+    "ms365/send_mail"), letting the model retry with an exact name instead
+    of guessing keywords blindly.
+    """
+    keywords = _normalize_query_keywords(query)
+    if not keywords or not isinstance(payload, list):
+        return payload, None
+    entries = [entry for entry in payload if isinstance(entry, dict)]
+    if len(entries) != len(payload):
+        return payload, None  # mixed shapes — never drop entries silently
+    haystacks = []
+    for entry in entries:
+        name = str(entry.get("name") or "").lower()
+        description = str(entry.get("description") or "").lower()
+        haystacks.append(f"{name} {description}")
+    matched = [
+        entry
+        for entry, haystack in zip(entries, haystacks)
+        if any(keyword in haystack for keyword in keywords)
+    ]
+    if matched:
+        return matched, None
+    names = [str(entry.get("name") or "") for entry in entries]
+    bare_names = [name.split("/", 1)[-1] for name in names]
+    suggestions = []
+    for keyword in keywords:
+        for bare in difflib.get_close_matches(
+            keyword, bare_names, n=4, cutoff=0.35
+        ):
+            full = names[bare_names.index(bare)]
+            if full not in suggestions:
+                suggestions.append(full)
+    return [], suggestions[:8]
+
+
 def _http_get_json(url: str, headers: dict) -> tuple[int, Optional[Any], str]:
     """GET + JSON parse. Returns (status, parsed, raw_text)."""
     import requests
@@ -221,6 +294,19 @@ def _handle_list_chathub_tools(args: dict, **kw) -> str:
 
     if status == 200:
         payload = _catalog_payload(parsed)
+        query = args.get("query") if isinstance(args, dict) else None
+        payload, did_you_mean = _filter_tools_by_query(payload, query)
+        if did_you_mean is not None:
+            hint = (
+                "Closest tool names: " + ", ".join(did_you_mean) + "."
+                if did_you_mean
+                else "No close name found."
+            )
+            return (
+                f"No ChatHub connector tools matched {query!r}. {hint} "
+                "Retry with an exact tool name, or call without query to "
+                "list all tools."
+            )
         text = json.dumps(payload, ensure_ascii=False) if parsed is not None else (raw or "")
         if len(text) > MAX_LIST_BODY_CHARS:
             text = text[:MAX_LIST_BODY_CHARS] + "\n...[truncated]"
