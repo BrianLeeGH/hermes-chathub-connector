@@ -51,8 +51,12 @@ plugins:
     - chathub-connector
 platform_toolsets:
   cli:
+    # Keep the platform default toolset in the list. Listing only plugin
+    # toolsets replaces the whole allowlist and strips file/terminal.
+    - hermes-cli
     - chathub
   api_server:
+    - hermes-api-server
     - chathub
 connector:
   gateway_url: "http://127.0.0.1:44340"
